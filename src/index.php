@@ -282,7 +282,7 @@ class DBProduit
      */
     public function findLimit(int $offset = 0, int $count = 30): array
     {
-        
+
     }
 
     /**
@@ -333,13 +333,3 @@ class DBProduit
     }
 }
 class DBUtilisateur {}
-
-// Instantiation des classes
-
-$chaussure = new Produit("Claquette", "Super pour aller à la plage", 15.0);
-echo $chaussure . '<br>';
-$chaussure->setPrix(10.0);
-echo $chaussure;
-
-$bob = new Utilisateur("bob", "motdepasse", "Bob L'Eponge");
-echo '<br>' . $bob;
