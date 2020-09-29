@@ -193,7 +193,7 @@ class Utilisateur
     }
 }
 
-class DBProduit
+class DB
 {
     /**
      * @var string
@@ -213,27 +213,34 @@ class DBProduit
     /**
      * @var string
      */
-    protected $table;
+    protected $baseDeDonnees;
 
     /**
      * @var string
      */
-    protected $baseDeDonnees;
+    private $table;
 
     /**
-     * DBProduit constructor.
+     * @var string
+     */
+    protected $identifiant;
+
+    /**
+     * DB constructor.
      * @param string $serveur
      * @param string $utilisateur
      * @param string $motDePasse
      * @param string $baseDeDonnees
      * @param string $table
+     * @param string $identifiant
      */
     public function __construct(
         string $serveur,
         string $utilisateur,
         string $motDePasse,
         string $baseDeDonnees,
-        string $table
+        string $table,
+        string $identifiant
     )
     {
         $this->serveur = $serveur;
@@ -241,27 +248,28 @@ class DBProduit
         $this->motDePasse = $motDePasse;
         $this->baseDeDonnees = $baseDeDonnees;
         $this->table = $table;
+        $this->identifiant = $identifiant;
     }
 
     /**
-     * @param int $id
-     * @return Produit|null
+     * @param $id
+     * @return mixed|null
      * @throws Exception
      */
-    public function find(int $id): ?Produit
+    public function find($id)
     {
-        $sql = sprintf("SELECT * FROM %s WHERE id = %d", $this->table, $id);
-        $produit = $this->convert(
+        $sql = sprintf("SELECT * FROM %s WHERE %s = %s", $this->table, $this->identifiant, $id);
+        $object = $this->convert(
             $this->query($sql)
         );
 
-        return count($produit) === 1
-            ? $produit[0]
+        return count($object) === 1
+            ? $object[0]
             : null;
     }
 
     /**
-     * @return array|Produit[]
+     * @return array
      * @throws Exception
      */
     public function findAll(): array
@@ -274,15 +282,18 @@ class DBProduit
     }
 
     /**
-     * Retourne les $count produits à partir de $offset
-     *
      * @param int $offset
      * @param int $count
-     * @return array|Produit[]
+     * @return array
+     * @throws Exception
      */
     public function findLimit(int $offset = 0, int $count = 30): array
     {
+        $sql = sprintf("SELECT * FROM %s LIMIT %d,%d", $this->table, $offset, $count);
 
+        return $this->convert(
+            $this->query($sql)
+        );
     }
 
     /**
@@ -316,9 +327,48 @@ class DBProduit
 
     /**
      * @param mysqli_result $mysqli_result
+     * @return array
+     */
+    protected function convert(mysqli_result $mysqli_result): array
+    {
+        return $mysqli_result->fetch_all(MYSQLI_ASSOC);
+    }
+}
+
+class DBProduit extends DB
+{
+    const TABLE_NAME = 'product';
+    const TABLE_ID = 'id';
+
+    /**
+     * DBProduit constructor.
+     * @param string $serveur
+     * @param string $utilisateur
+     * @param string $motDePasse
+     * @param string $baseDeDonnees
+     */
+    public function __construct(
+        string $serveur,
+        string $utilisateur,
+        string $motDePasse,
+        string $baseDeDonnees
+    )
+    {
+        parent::__construct(
+            $serveur,
+            $utilisateur,
+            $motDePasse,
+            $baseDeDonnees,
+            self::TABLE_NAME,
+            self::TABLE_ID
+        );
+    }
+
+    /**
+     * @param mysqli_result $mysqli_result
      * @return array|Produit[]
      */
-    private function convert(mysqli_result $mysqli_result): array
+    protected function convert(mysqli_result $mysqli_result): array
     {
         $produits = [];
         while ($row = $mysqli_result->fetch_assoc()) {
@@ -332,4 +382,60 @@ class DBProduit
         return $produits;
     }
 }
-class DBUtilisateur {}
+
+class DBUtilisateur extends DB
+{
+    const TABLE_NAME = 'users';
+    const TABLE_ID = 'username';
+
+    /**
+     * DBProduit constructor.
+     * @param string $serveur
+     * @param string $utilisateur
+     * @param string $motDePasse
+     * @param string $baseDeDonnees
+     */
+    public function __construct(
+        string $serveur,
+        string $utilisateur,
+        string $motDePasse,
+        string $baseDeDonnees
+    )
+    {
+        parent::__construct(
+            $serveur,
+            $utilisateur,
+            $motDePasse,
+            $baseDeDonnees,
+            self::TABLE_NAME,
+            self::TABLE_ID
+        );
+    }
+
+    /**
+     * @param mysqli_result $mysqli_result
+     * @return array|Utilisateur[]
+     */
+    protected function convert(mysqli_result $mysqli_result): array
+    {
+        $utilisateurs = [];
+        while ($row = $mysqli_result->fetch_assoc()) {
+            $utilisateurs[] = new Utilisateur(
+                $row['username'],
+                $row['password'],
+                $row['fullname']
+            );
+        }
+        return $utilisateurs;
+    }
+}
+
+
+
+
+
+
+
+
+
+
